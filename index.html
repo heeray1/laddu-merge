@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#4a220c">
+<title>Laddu Merge</title>
+<meta name="description" content="Drop the sweets! Two same sweets merge into a bigger one. Go from a tiny boondi all the way to the Maha Laddu. New Daily Thali every day.">
+<meta property="og:title" content="Laddu Merge 🟠 Can you make the Maha Laddu?">
+<meta property="og:description" content="Drop sweets, merge two same ones into a bigger one. From boondi to Maha Laddu. New Daily Thali every day!">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://heeray1.github.io/laddu-merge/">
+<meta property="og:image" content="https://heeray1.github.io/laddu-merge/assets/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#2b1408;touch-action:none;
+    font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .top{position:fixed;top:max(12px,env(safe-area-inset-top));left:12px;display:none;gap:8px;z-index:3}
+  .ib{width:40px;height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.12);color:#ffe2a6;font-size:19px;font-weight:800;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin:0}
+  .ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:5;padding:16px}
+  .ov.on{display:flex}
+  #over{background:rgba(25,10,0,.74)}
+  #home{background:linear-gradient(#4a220c,#1f0d04);flex-direction:column;overflow:auto}
+  .card{background:#fff7ea;border-radius:22px;padding:24px 26px;width:min(86vw,330px);text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,.45);border:3px solid #e2a23a}
+  .card h1{margin:0 0 2px;font-size:26px;color:#9a4a08}
+  .card p{margin:4px 0;color:#6b4a3a;font-size:15px}
+  .big{font-size:56px;font-weight:800;color:#e0730c;line-height:1.1;margin:4px 0}
+  .new{display:none;color:#fff;background:#d18a0a;border-radius:999px;font-size:13px;font-weight:800;padding:4px 12px;margin:2px auto 6px;width:max-content}
+  .new.on{display:block}
+  button.b{font:inherit;font-weight:800;font-size:17px;border:0;border-radius:15px;padding:13px 18px;width:100%;margin-top:10px;cursor:pointer;color:#fff;display:block}
+  button.b small{display:block;font-weight:600;font-size:12.5px;opacity:.92;margin-top:2px}
+  .orange{background:#e0730c}.green{background:#25d366}.brown{background:#8a4b1c}
+  .ghost{background:transparent!important;color:#9a4a08!important;font-size:15px!important;padding:8px!important}
+  #home .in{width:min(88vw,340px);text-align:center;margin:auto}
+  #hero{width:230px;height:150px;display:block;margin:0 auto 6px}
+  #home h1{margin:0;color:#fff;font-size:42px;letter-spacing:.5px}
+  #home .tag{color:#ffcf7a;font-size:16px;margin:4px 0 16px;font-weight:600}
+  .how{margin:18px 0 0;padding:0;list-style:none;color:rgba(255,255,255,.82);font-size:14px;line-height:1.55;text-align:left}
+  .how li{padding-left:24px;position:relative}.how li:before{content:"";position:absolute;left:4px;top:.5em;width:10px;height:10px;border-radius:50%;background:#f4a511}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top" id="top">
+  <button class="ib" id="bhome" aria-label="Home">&#8962;</button>
+  <button class="ib" id="bsnd" aria-label="Sound">&#9834;</button>
+</div>
+
+<div class="ov on" id="home"><div class="in">
+  <canvas id="hero" width="460" height="300"></canvas>
+  <h1>Laddu Merge</h1>
+  <div class="tag">Can you make the Maha Laddu?</div>
+  <button class="b orange" id="pdaily">Daily Thali<small id="sdaily"></small></button>
+  <button class="b brown" id="pendless">Endless<small id="sendless"></small></button>
+  <ul class="how">
+    <li>Slide to aim, lift your finger to drop.</li>
+    <li>Two same sweets merge into a bigger one.</li>
+    <li>10 sweets, from Boondi up to the Maha Laddu.</li>
+    <li>Don't let the sweets pile above the line.</li>
+  </ul>
+</div></div>
+
+<div class="ov" id="over"><div class="card">
+  <h1>Thali overflow!</h1>
+  <p id="fmode">Endless</p>
+  <div class="big" id="fs">0</div>
+  <div class="new" id="fnew">New best!</div>
+  <p id="fm">Biggest sweet: Boondi</p>
+  <p id="fb">Best 0</p>
+  <button class="b orange" id="again">Play again</button>
+  <button class="b green" id="share">Share score</button>
+  <button class="b ghost" id="tohome">Home</button>
+</div></div>
+<script src="vendor/matter.min.js"></script>
+<script>
+"use strict";
+const { Engine, Bodies, Composite, Body, Events } = Matter;
+const cv = document.getElementById("c"), ctx0 = cv.getContext("2d"); let ctx = ctx0;
+const Q = new URLSearchParams(location.search), BOT = Q.has("bot"), ART = Q.get("art");
+const $ = id => document.getElementById(id);
+const LS = { get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } },
+             set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }, del(k){ try{ localStorage.removeItem(k); }catch(e){} } };
+
+// logical world (scaled to fit any screen)
+const LW=400, LH=700, L=+(Q.get("L")||44), R=LW-L, FLOOR=652, LINE=+(Q.get("line")||214), DROPY=LINE-62;
+const TIERS = [
+  { name:"Boondi",          r:13 },
+  { name:"Peda",            r:18 },
+  { name:"Gulab Jamun",     r:24 },
+  { name:"Rasgulla",        r:30 },
+  { name:"Motichoor Laddu", r:37 },
+  { name:"Besan Laddu",     r:45 },
+  { name:"Nariyal Laddu",   r:54 },
+  { name:"Jalebi",          r:63 },
+  { name:"Rasmalai",        r:73 },
+  { name:"Maha Laddu",      r:86 },
+];
+const SPAWN_MAX = 4;                      // only the 5 smallest sweets are dropped
+const pts = k => (k+1)*(k+2)/2;
+
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function todayKey(){ const d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function niceDate(k){ return (k%100)+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][((k/100|0)%100)-1]; }
+
+let mode="endless", seed=0, dayKey=0, startBest=0, playing=false;
+let engine=null, bodies=[], queue=[], score=0, shown=0, best=0, over=true, cur=0, next=0, aimX=LW/2, canDrop=true, danger=0, fx=[], pops=[], maxTier=0, dropped=0;
+const bestKey = () => mode==="daily" ? "lm_daily_"+dayKey : "lm_best";
+const saveKey = m => "lm_save_"+m;
+
+// sweet number k of a game is fixed by the seed, so the Daily Thali gives everyone the same order
+function tierAt(k){ const max=Math.min(SPAWN_MAX+1, 2+Math.floor(k/4)); return (mulberry((seed ^ Math.imul(k+1,2654435761))|0)()*max)|0; }
+
+function newWorld(){
+  engine = Engine.create({ positionIterations:8, velocityIterations:6 });
+  engine.gravity.y = 1.25;
+  const o={ isStatic:true, friction:.4, restitution:.1 };
+  Composite.add(engine.world, [
+    Bodies.rectangle(LW/2, FLOOR+40, LW, 80, o),
+    Bodies.rectangle(L-40, LH/2-200, 80, LH+600, o),
+    Bodies.rectangle(R+40, LH/2-200, 80, LH+600, o),
+  ]);
+  Events.on(engine, "collisionStart", onHit);
+  Events.on(engine, "collisionActive", onHit);
+  bodies=[]; queue=[];
+}
+function addSweet(t,x,y,a=0){
+  const b=Bodies.circle(x,y,TIERS[t].r,{ restitution:.18, friction:.35, frictionAir:.004, density:.0012, angle:a });
+  b.tier=t; b.born=performance.now(); b.pop=b.born;
+  Composite.add(engine.world,b); bodies.push(b); return b;
+}
+function start(m, fresh){
+  mode=m; dayKey=todayKey(); newWorld();
+  let s=null; if(!fresh){ try{ s=JSON.parse(LS.get(saveKey(m),"null")); }catch(e){} }
+  best=+LS.get(bestKey(),0);
+  if(s && (m!=="daily"||s.dayKey===dayKey) && Array.isArray(s.bodies)){
+    ({ seed, dropped, score, maxTier, startBest } = s);
+    for(const b of s.bodies){ const n=addSweet(b.t,b.x,b.y,b.a); n.born-=5000; n.pop-=5000; }
+  } else {
+    seed = m==="daily" ? dayKey : (Math.random()*2**31)|0; score=0; maxTier=0; dropped=0; startBest=best;
+  }
+  shown=score; over=false; danger=0; fx=[]; pops=[]; cur=tierAt(dropped); next=tierAt(dropped+1); aimX=LW/2; canDrop=true; playing=true; acc=0;
+  $("home").classList.remove("on"); $("over").classList.remove("on"); $("top").style.display="flex";
+}
+function save(){
+  if(!playing||over||BOT) return;
+  LS.set(saveKey(mode), JSON.stringify({ seed, dayKey, dropped, score, maxTier, startBest,
+    bodies:bodies.map(b=>({ t:b.tier, x:Math.round(b.position.x*10)/10, y:Math.round(b.position.y*10)/10, a:Math.round(b.angle*100)/100 })) }));
+}
+function onHit(ev){
+  for(const p of ev.pairs){ const a=p.bodyA, b=p.bodyB;
+    if(a.tier===undefined||a.tier!==b.tier||a.gone||b.gone) continue;
+    a.gone=b.gone=true; queue.push([a,b]); }
+}
+function doMerges(){
+  for(const [a,b] of queue){
+    Composite.remove(engine.world,a); Composite.remove(engine.world,b);
+    bodies=bodies.filter(x=>x!==a&&x!==b);
+    const x=(a.position.x+b.position.x)/2, y=(a.position.y+b.position.y)/2, t=a.tier, now=performance.now();
+    let gain;
+    if(t===TIERS.length-1){ gain=300; pops.push({text:"DOUBLE MAHA! +300",x,y,t:now}); snd("big"); }
+    else {
+      const n=addSweet(t+1, Math.min(Math.max(x,L+TIERS[t+1].r),R-TIERS[t+1].r), y);
+      Body.setVelocity(n,{ x:(a.velocity.x+b.velocity.x)/2, y:(a.velocity.y+b.velocity.y)/2 });
+      Body.setAngle(n,a.angle); n.born-=5000;          // merged sweets count for the overflow line at once
+      gain=pts(t+1);
+      if(t+1===TIERS.length-1){ gain+=100; pops.push({text:"MAHA LADDU!  +"+gain,x,y,t:now}); snd("big"); }
+      else if(t+1>maxTier&&t+1>=5){ pops.push({text:TIERS[t+1].name+"!",x,y,t:now}); snd("big"); }
+      else snd("merge",t);
+      maxTier=Math.max(maxTier,t+1);
+    }
+    fx.push({x,y,r:TIERS[Math.min(t+1,TIERS.length-1)].r,t:now});
+    score+=gain; if(score>best){ best=score; LS.set(bestKey(),best); }
+    if(navigator.vibrate&&!BOT) navigator.vibrate(12);
+  }
+  queue.length=0;
+}
+function drop(){
+  if(over||!canDrop||!playing) return;
+  const r=TIERS[cur].r; addSweet(cur, Math.min(Math.max(aimX,L+r+1),R-r-1), DROPY);
+  dropped++; snd("drop"); canDrop=false; cur=next; next=tierAt(dropped+1);
+  setTimeout(()=>{ canDrop=true; }, 520);
+}
+function endGame(){
+  over=true; LS.del(saveKey(mode)); snd("over");
+  setTimeout(()=>{ if(!over) return;
+    $("fs").textContent=score; $("fmode").textContent = mode==="daily" ? "Daily Thali · "+niceDate(dayKey) : "Endless";
+    $("fm").textContent="Biggest sweet: "+TIERS[maxTier].name+" ("+(maxTier+1)+" of 10)";
+    $("fb").textContent=(mode==="daily"?"Today's best ":"Best ")+best;
+    $("fnew").classList.toggle("on", score>startBest && score>0);
+    $("over").classList.add("on"); }, 900);
+}
+function goHome(){
+  save(); playing=false; $("over").classList.remove("on"); $("top").style.display="none";
+  const k=todayKey(), has=m=>{ try{ const s=JSON.parse(LS.get(saveKey(m),"null")); return s&&(m!=="daily"||s.dayKey===k)?s:null; }catch(e){ return null; } };
+  const d=has("daily"), e=has("endless");
+  $("sdaily").textContent = niceDate(k)+" · same sweets for everyone · "+(d ? "continue at "+d.score : "best "+LS.get("lm_daily_"+k,0));
+  $("sendless").textContent = e ? "Continue at "+e.score+" · best "+LS.get("lm_best",0) : "Play as long as you can · best "+LS.get("lm_best",0);
+  $("home").classList.add("on"); drawHero();
+}
+
+// ---------- sound ----------
+let ac=null, muted=LS.get("lm_mute","0")==="1";
+function snd(kind,t=0){
+  if(BOT||muted) return;
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume();
+    const n=ac.currentTime;
+    const tone=(f,d,at,type="sine",v=.15)=>{ const o=ac.createOscillator(), g=ac.createGain();
+      o.type=type; o.frequency.setValueAtTime(f,n+at); g.gain.setValueAtTime(.0001,n+at); g.gain.exponentialRampToValueAtTime(v,n+at+.008);
+      g.gain.exponentialRampToValueAtTime(.001,n+at+d); o.connect(g).connect(ac.destination); o.start(n+at); o.stop(n+at+d+.02); };
+    if(kind==="drop") tone(300,.07,0,"triangle",.1);
+    if(kind==="merge"){ const f=420*Math.pow(1.122,t*2); tone(f,.1,0); tone(f*1.5,.14,.06); }
+    if(kind==="big"){ tone(660,.1,0); tone(880,.1,.07); tone(1100,.12,.14); tone(1320,.26,.21); }
+    if(kind==="over"){ tone(392,.2,0,"triangle"); tone(311,.2,.18,"triangle"); tone(233,.5,.36,"triangle"); }
+  }catch(e){}
+}
+
+// ---------- layout ----------
+let W,H,D,S,OX,OY;
+function layout(){
+  D=Math.min(window.devicePixelRatio||1,2.5); W=innerWidth; H=innerHeight;
+  cv.width=W*D; cv.height=H*D; S=Math.min(W/LW,H/LH); OX=(W-LW*S)/2; OY=(H-LH*S)/2;
+}
+
+// ---------- sweets ----------
+function ball(r,c0,c1,c2){ const g=ctx.createRadialGradient(-r*.35,-r*.4,r*.1,0,0,r);
+  g.addColorStop(0,c0); g.addColorStop(.6,c1); g.addColorStop(1,c2); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); }
+function dots(r,n,col,size,seed){ ctx.fillStyle=col;
+  for(let i=0;i<n;i++){ const a=i*2.399+seed, d=r*.86*Math.sqrt((i+.5)/n); ctx.beginPath(); ctx.arc(Math.cos(a)*d,Math.sin(a)*d,size,0,7); ctx.fill(); } }
+function drawSweet(t,x,y,r,ang,alpha=1){
+  ctx.save(); ctx.globalAlpha*=alpha; ctx.translate(x,y);
+  ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.arc(0,r*.08,r,0,7); ctx.fill();
+  ctx.rotate(ang);
+  switch(t){
+    case 0: ball(r,"#ffd257","#f4a511","#c97c06"); break;
+    case 1: ball(r,"#fff0cf","#ecca8c","#c39a55");
+      ctx.fillStyle="#5c9a34"; ctx.beginPath(); ctx.ellipse(0,0,r*.34,r*.2,.5,0,7); ctx.fill(); break;
+    case 2: ball(r,"#b5562a","#7b2e12","#4a1806"); break;
+    case 3: ball(r,"#ffffff","#fbf3e2","#d9cbb0"); dots(r,7,"rgba(190,170,130,.35)",r*.06,1); break;
+    case 4: ball(r,"#ffb347","#f0851a","#bb5a06"); dots(r,26,"rgba(255,214,120,.75)",r*.085,0); dots(r,14,"rgba(160,70,0,.35)",r*.06,2); break;
+    case 5: ball(r,"#f8dc8a","#dfae45","#a97a1e"); dots(r,12,"rgba(150,100,20,.3)",r*.05,1);
+      ctx.fillStyle="#f6e3c0"; ctx.beginPath(); ctx.ellipse(0,0,r*.26,r*.15,-.4,0,7); ctx.fill(); break;
+    case 6: ball(r,"#ffffff","#f6f1ea","#cfc6ba"); ctx.strokeStyle="rgba(255,255,255,.95)"; ctx.lineWidth=r*.05; ctx.lineCap="round";
+      for(let i=0;i<34;i++){ const a=i*2.399, d=r*.9*Math.sqrt((i+.5)/34), px=Math.cos(a)*d, py=Math.sin(a)*d, q=i*1.7;
+        ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+Math.cos(q)*r*.12,py+Math.sin(q)*r*.12); ctx.stroke(); }
+      dots(r,6,"rgba(240,120,150,.55)",r*.07,3); break;
+    case 7: ctx.fillStyle="rgba(255,190,60,.25)"; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill();
+      for(const [w,c] of [[r*.2,"#b85e05"],[r*.14,"#f79a12"],[r*.05,"#ffd27a"]]){
+        ctx.strokeStyle=c; ctx.lineWidth=w; ctx.lineCap="round"; ctx.beginPath();
+        for(let a=0;a<=Math.PI*5.4;a+=.15){ const d=r*.08+(r*.8)*(a/(Math.PI*5.4)); const px=Math.cos(a)*d, py=Math.sin(a)*d; a?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+        ctx.stroke(); } break;
+    case 8: ball(r,"#fffbe8","#f6e6ad","#d2b96a"); dots(r,5,"#5c9a34",r*.07,1);
+      ctx.strokeStyle="#c8401a"; ctx.lineWidth=r*.035; ctx.lineCap="round";
+      for(let i=0;i<5;i++){ const a=i*1.3; ctx.beginPath(); ctx.moveTo(Math.cos(a)*r*.2,Math.sin(a)*r*.2); ctx.lineTo(Math.cos(a+.5)*r*.42,Math.sin(a+.5)*r*.42); ctx.stroke(); } break;
+    case 9: ball(r,"#fff3b0","#f5b61a","#b97905"); dots(r,40,"rgba(255,235,150,.8)",r*.06,0);
+      ctx.fillStyle="#fff"; ctx.globalAlpha*=.9;
+      for(const [sx,sy,ss] of [[-.4,-.45,.16],[.45,-.2,.1],[.1,.5,.09]]){ ctx.beginPath();
+        for(let i=0;i<8;i++){ const a=i*Math.PI/4, d=r*ss*(i%2?.35:1); ctx.lineTo(sx*r+Math.cos(a)*d, sy*r+Math.sin(a)*d); } ctx.closePath(); ctx.fill(); } break;
+  }
+  ctx.rotate(-ang);
+  const gl=ctx.createRadialGradient(-r*.35,-r*.42,0,-r*.35,-r*.42,r*.5);
+  gl.addColorStop(0,"rgba(255,255,255,.5)"); gl.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill();
+  ctx.restore();
+}
+// a small pile used for the home screen and the store art: [tier, x, y, r] in a 460x300 box
+const PILE=[[9,230,170,112],[6,92,222,62],[7,372,214,70],[4,150,92,40],[5,330,96,46],[3,52,130,32],[2,410,112,26],[1,262,40,20],[0,198,34,14],[0,300,34,13],[8,236,60,0]];
+function drawPile(x,y,k){ for(const [t,px,py,r] of PILE) if(r) drawSweet(t,x+px*k,y+py*k,r*k,t*.7); }
+function drawHero(){ ctx=$("hero").getContext("2d"); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,460,300); drawPile(0,0,1); ctx=ctx0; }
+function drawArt(){
+  const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,"#5a2a0e"); bg.addColorStop(1,"#1f0d04"); ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  if(ART==="icon"){ drawSweet(9,W*.5,W*.52,W*.36,.3); drawSweet(4,W*.2,W*.2,W*.13,1); drawSweet(2,W*.82,W*.2,W*.09,0); drawSweet(0,W*.84,W*.84,W*.06,0); return; }
+  const k=H/400; drawPile(W-460*k-H*.03,H*.12,k);
+  ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillStyle="#fff"; ctx.font="800 "+H*.17+"px ui-rounded,system-ui";
+  ctx.fillText("Laddu",H*.12,H*.33); ctx.fillText("Merge",H*.12,H*.51);
+  ctx.fillStyle="#ffcf7a"; ctx.font="700 "+H*.058+"px ui-rounded,system-ui"; ctx.fillText("Can you make",H*.125,H*.68); ctx.fillText("the Maha Laddu?",H*.125,H*.755);
+}
+
+// ---------- loop ----------
+const STEP=1000/60; let last=0, acc=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(now-(last||now),100); last=now;
+  if(playing&&!over){
+    acc+=dt; let n=0;
+    while(acc>=STEP&&n<4){ Engine.update(engine,STEP); doMerges(); acc-=STEP; n++; }
+    if(n===4) acc=0;
+    // overflow check: a settled sweet poking above the line
+    const high=bodies.some(b=>now-b.born>1300 && b.position.y-TIERS[b.tier].r<LINE);
+    danger = high ? danger+dt : Math.max(0,danger-dt*2);
+    if(danger>2600) endGame();
+  }
+  draw(now);
+}
+function draw(now){
+  ctx.setTransform(D,0,0,D,0,0);
+  if(ART){ drawArt(); return; }
+  const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,"#4a220c"); bg.addColorStop(1,"#1f0d04");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  if(!playing) return;
+  ctx.translate(OX,OY); ctx.scale(S,S);
+
+  // steel jar
+  const jg=ctx.createLinearGradient(L,0,R,0); jg.addColorStop(0,"#3a2415"); jg.addColorStop(.5,"#4b301d"); jg.addColorStop(1,"#3a2415");
+  ctx.fillStyle=jg; ctx.beginPath(); ctx.roundRect(L,LINE-90,R-L,FLOOR-LINE+90,[0,0,16,16]); ctx.fill();
+  const sg=ctx.createLinearGradient(0,0,0,FLOOR+22); sg.addColorStop(0,"#e9eef2"); sg.addColorStop(1,"#8f9aa3");
+  ctx.fillStyle=sg;
+  ctx.beginPath(); ctx.roundRect(L-12,LINE-90,12,FLOOR-LINE+102,6); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(R,LINE-90,12,FLOOR-LINE+102,6); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(L-12,FLOOR,R-L+24,14,7); ctx.fill();
+
+  // overflow line
+  const warn=danger>300;
+  ctx.setLineDash([8,8]); ctx.lineWidth=2;
+  ctx.strokeStyle= warn ? `rgba(255,70,50,${.55+.45*Math.sin(now/90)})` : "rgba(255,255,255,.22)";
+  ctx.beginPath(); ctx.moveTo(L,LINE); ctx.lineTo(R,LINE); ctx.stroke(); ctx.setLineDash([]);
+  if(warn){ ctx.fillStyle=`rgba(255,60,40,${.10+.08*Math.sin(now/90)})`; ctx.fillRect(L,LINE-90,R-L,90); }
+
+  for(const b of bodies){ const k=Math.min(1,(now-b.pop)/140), r=TIERS[b.tier].r*(.75+.25*k);
+    drawSweet(b.tier,b.position.x,b.position.y,r,b.angle,over?.6:1); }
+
+  // merge sparkle
+  fx=fx.filter(e=>now-e.t<350);
+  for(const e of fx){ const k=(now-e.t)/350; ctx.strokeStyle=`rgba(255,225,140,${1-k})`; ctx.lineWidth=4*(1-k);
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r*(1+k*.7),0,7); ctx.stroke(); }
+
+  // aimer
+  if(!over){
+    const r=TIERS[cur].r, x=Math.min(Math.max(aimX,L+r+1),R-r-1);
+    ctx.strokeStyle="rgba(255,255,255,.28)"; ctx.lineWidth=2; ctx.setLineDash([4,9]);
+    ctx.beginPath(); ctx.moveTo(x,DROPY+r); ctx.lineTo(x,FLOOR); ctx.stroke(); ctx.setLineDash([]);
+    drawSweet(cur,x,DROPY,r,0,canDrop?1:.35);
+  }
+
+  // HUD
+  shown+=(score-shown)*.2; if(Math.abs(score-shown)<.5) shown=score;
+  ctx.textBaseline="middle"; ctx.textAlign="center";
+  ctx.fillStyle="#ffcf7a"; ctx.font="700 13px ui-rounded,system-ui"; ctx.fillText(mode==="daily" ? "DAILY THALI · "+niceDate(dayKey).toUpperCase() : "ENDLESS",LW/2,22);
+  ctx.fillStyle="#fff"; ctx.font="800 42px ui-rounded,system-ui"; ctx.fillText(Math.round(shown),LW/2,56);
+  ctx.fillStyle="rgba(255,207,122,.85)"; ctx.font="700 12px ui-rounded,system-ui"; ctx.fillText("BEST "+best,LW/2,88);
+  ctx.fillStyle="rgba(255,207,122,.9)"; ctx.font="700 12px ui-rounded,system-ui"; ctx.fillText("NEXT",LW-40,22);
+  ctx.fillStyle="rgba(255,255,255,.08)"; ctx.beginPath(); ctx.arc(LW-40,58,25,0,7); ctx.fill();
+  drawSweet(next,LW-40,58,Math.min(TIERS[next].r,20),0);
+
+  // ladder of sweets along the bottom
+  const n=TIERS.length, gap=(LW-24)/n;
+  for(let i=0;i<n;i++) drawSweet(i,12+gap*(i+.5),FLOOR+32,6+i*1.05,0,i<=Math.max(maxTier,SPAWN_MAX)?1:.28);
+
+  pops=pops.filter(p=>now-p.t<1100);
+  for(const p of pops){ const k=(now-p.t)/1100; ctx.globalAlpha=1-k*k; ctx.textAlign="center"; ctx.font="800 22px ui-rounded,system-ui";
+    ctx.lineWidth=5; ctx.strokeStyle="rgba(50,20,0,.85)"; ctx.fillStyle="#ffe08a";
+    const X=Math.min(Math.max(p.x,120),LW-120), Y=p.y-30-k*40; ctx.strokeText(p.text,X,Y); ctx.fillText(p.text,X,Y); ctx.globalAlpha=1; }
+
+  if(dropped===0){ ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="600 14px ui-rounded,system-ui"; ctx.textAlign="center";
+    ctx.fillText("Slide to aim, lift to drop",LW/2,360); }
+}
+
+// ---------- input ----------
+const toX=e=>(e.clientX-OX)/S;
+let down=false;
+cv.addEventListener("pointerdown",e=>{ if(BOT||!playing) return; down=true; aimX=toX(e); });
+cv.addEventListener("pointermove",e=>{ if(BOT||!playing) return; if(down||e.pointerType==="mouse") aimX=toX(e); });
+cv.addEventListener("pointerup",e=>{ if(BOT||!down) return; down=false; aimX=toX(e); drop(); });
+cv.addEventListener("pointercancel",()=>{ down=false; });
+addEventListener("resize",layout);
+addEventListener("pagehide",save); setInterval(save,2500);
+$("pdaily").onclick=()=>start("daily"); $("pendless").onclick=()=>start("endless");
+$("again").onclick=()=>start(mode,true); $("tohome").onclick=goHome; $("bhome").onclick=goHome;
+function sndIcon(){ $("bsnd").style.opacity=muted?.4:1; $("bsnd").innerHTML=muted?"&#10005;":"&#9834;"; }
+$("bsnd").onclick=()=>{ muted=!muted; LS.set("lm_mute",muted?"1":"0"); sndIcon(); if(!muted) snd("drop"); };
+$("share").onclick=()=>{
+  const url="https://heeray1.github.io/laddu-merge/";
+  const text="Laddu Merge 🟠 "+(mode==="daily" ? "Daily Thali "+niceDate(dayKey)+": " : "")+"I scored "+score+" and made a "+TIERS[maxTier].name+" ("+(maxTier+1)+"/10). Can you make the Maha Laddu?";
+  if(navigator.share&&location.protocol==="https:") navigator.share({ text, url }).catch(()=>{});
+  else window.open("https://wa.me/?text="+encodeURIComponent(text+" "+url),"_blank");
+};
+
+// ---------- test hooks: ?bot=ms drops at random spots (add &mode=daily), ?art=icon|share draws store art ----------
+window.__state=()=>({ mode, score, best, over, count:bodies.length, maxTier, dropped, cur, next });
+
+layout(); sndIcon(); requestAnimationFrame(frame);
+if(ART){ $("home").classList.remove("on"); }
+else if(BOT||Q.has("mode")){ start(Q.get("mode")==="daily"?"daily":"endless", BOT);
+  if(BOT) setInterval(()=>{ if(over||!canDrop) return; aimX=L+Math.random()*(R-L); drop(); }, +(Q.get("bot")||600)); }
+else goHome();
+</script>
+</body>
+</html>
